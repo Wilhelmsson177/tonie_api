@@ -29,14 +29,19 @@ class TonieAPI:
 
     API_URL = "https://api.tonie.cloud/v2"
 
-    def __init__(self, username: str, password: str, user_agent: str) -> None:
+    def __init__(self, username: str, password: str, user_agent: str, timeout: int = 30) -> None:
         """Initializes the API and creates a session token for tonie cloud session."""
         if not user_agent or user_agent == "":
             self.user_agent = "tonieApi/2.0"
         else:
             self.user_agent = user_agent
         self.session = TonieCloudSession()
-        self.session.acquire_token(username=username, password=password, user_agent=self.user_agent)
+
+        self.session.acquire_token(username=username, password=password, user_agent=self.user_agent, timeout=timeout)
+
+        if self.session.token is None:
+            msg = "Failed to acquire session token. Please check your credentials or network connection."
+            raise ValueError(msg)
 
     def __request(self, url: str, request_type: HttpMethod, data: dict | None = None) -> dict:
         headers = {

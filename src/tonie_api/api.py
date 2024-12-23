@@ -27,21 +27,21 @@ class HttpMethod(Enum):
 class TonieAPI:
     """The TonieAPI class."""
 
-    API_URL = "https://api.tonie.cloud/v2"
+    OPENID_CONNECT: str = "https://login.tonies.com/auth/realms/tonies/protocol/openid-connect/token"
+    API_URL: str = "https://api.tonie.cloud/v2"
 
-    def __init__(self, username: str, password: str, user_agent: str, timeout: int = 30) -> None:
-        """Initializes the API and creates a session token for tonie cloud session."""
+    def __init__(self, user_agent: str, timeout: int = 30) -> None:
+        """TonieAPI base class initializer."""
+
+        # apply a valid user_agent string for requests
         if not user_agent or user_agent == "":
             self.user_agent = "tonieApi/2.0"
         else:
             self.user_agent = user_agent
+        # define the request timeout
+        self.timeout = timeout
+        # create a session object
         self.session = TonieCloudSession()
-
-        self.session.acquire_token(username=username, password=password, user_agent=self.user_agent, timeout=timeout)
-
-        if self.session.token is None:
-            msg = "Failed to acquire session token. Please check your credentials or network connection."
-            raise ValueError(msg)
 
     def __request(self, url: str, request_type: HttpMethod, data: dict | None = None) -> dict:
         headers = {
@@ -68,6 +68,20 @@ class TonieAPI:
         if not data:
             data = {}
         return self.__request(url, HttpMethod.PATCH, data=data)
+
+    def login_by_credentials(self, username: str, password: str) -> None:
+        # run the session aquire by credentials
+        self.session.acquire_token(self.OPENID_CONNECT, username=username, password=password, user_agent=self.user_agent, timeout=self.timeout)
+
+        if self.session.token is None:
+            raise PermissionError("Failed to acquire session token. Please check your credentials or network connection.")
+
+    def login_by_token(self, token: str) -> None:
+        # run the session aquire by credentials
+        self.session.validate_token(f"{self.API_URL}/me", token=token, user_agent=self.user_agent, timeout=self.timeout)
+
+        if self.session.token is None:
+            raise PermissionError("Failed to validate session token. Please check your credentials or network connection.")
 
     def get_me(self) -> User:
         """Gets the information about the logged in user.

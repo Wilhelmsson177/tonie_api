@@ -50,7 +50,7 @@ class TonieAPI:
         }
         if not data:
             data = {}
-        resp = self.session.request(request_type.name, f"{self.API_URL}/{url}", headers=headers, json=data)
+        resp = self.session.request(request_type.name, f"{self.API_URL}/{url}", headers=headers, json=data, timeout=self.timeout)
         if not resp.ok:
             log.error("HTTP request failed: %s", resp)
             return {}
@@ -149,7 +149,7 @@ class TonieAPI:
         ct = self._get(url=url)
         return CreativeTonie(**ct) if ct else ct
 
-    def upload_file_to_amazon_s3(self, file: Path | str) -> str:
+    def upload_file_to_amazon_s3(self, file: Path | str, timeout: int = 180) -> str:
         """Upload file to toniecloud at amazon s3.
 
         Args:
@@ -181,7 +181,7 @@ class TonieAPI:
         # the uploaded fileId
         return upload_request.fileId
 
-    def add_file_to_tonie(self, creative_tonie: CreativeTonie, file: Path | str, title: str) -> None:
+    def add_file_to_tonie(self, creative_tonie: CreativeTonie, file: Path | str, title: str, timeout: int = 180) -> None:
         """Add file to toniecloud and append as new chapter to tonie.
 
         Args:
@@ -194,11 +194,11 @@ class TonieAPI:
         """
 
         # request upload to amazon s3
-        fileId = self.upload_file_to_amazon_s3(file)
+        fileId = self.upload_file_to_amazon_s3(file, timeout)
         # add chapter to creative tonie
         self.add_chapter_to_tonie(creative_tonie, fileId, title)
 
-    def reset_chapters_with_file_to_tonie(self, creative_tonie: CreativeTonie, file: Path | str, title: str) -> None:
+    def reset_chapters_with_file_to_tonie(self, creative_tonie: CreativeTonie, file: Path | str, title: str, timeout: int = 180) -> None:
         """Add file to toniecloud and reset chapters to tonie.
 
         Args:
@@ -211,7 +211,7 @@ class TonieAPI:
         """
 
         # request upload to amazon s3
-        fileId = self.upload_file_to_amazon_s3(file)
+        fileId = self.upload_file_to_amazon_s3(file, timeout)
         # initialize new chapter
         chapter = dict(title=title, file=fileId)
 
